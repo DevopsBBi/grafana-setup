@@ -1,0 +1,594 @@
+{
+  "project": "monitoring-stack",
+  "steps": [
+    {
+      "id": "A1",
+      "phase": "A. Private network",
+      "title": "Install Tailscale on both servers",
+      "where": "application server (VPS ov-ab27bf, user devops) and monitoring server (office VM n8nserver, user devops01)",
+      "source": "equivalent",
+      "goal": "Create a private, encrypted network between the cloud server and the office server, so monitoring data never travels on the open internet and no port has to be opened to the internet.",
+      "commands": [
+        {
+          "cmd": "curl -fsSL https://tailscale.com/install.sh | sh",
+          "explain": "Downloads and runs Tailscale's official installer: it adds Tailscale's apt repository and installs the tailscale package and the tailscaled service."
+        },
+        {
+          "cmd": "sudo tailscale up",
+          "explain": "Joins this machine to your tailnet. It prints a login link: open it, sign in with the company account, approve the machine. The machine then gets a fixed private address in 100.64.0.0/10."
+        },
+        {
+          "cmd": "tailscale ip -4",
+          "explain": "Shows the machine's Tailscale address: 100.69.47.69 for the VPS (name 'vps'), 100.118.61.101 for n8nserver (name 'local-vm')."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "tailscale status",
+          "expect": "Both machines are listed, the other one is not 'offline'."
+        },
+        {
+          "cmd": "tailscale ping 100.118.61.101   # from the VPS",
+          "expect": "pong from local-vm ... via <direct path or DERP>"
+        }
+      ],
+      "files": [
+        "inventory.env (APP_TS_IP, MON_TS_IP, APP_TS_NAME, MON_TS_NAME)"
+      ],
+      "notes": "Tailscale uses WireGuard. Traffic goes directly between the two machines (UDP 41641) or through Tailscale's relays, always encrypted end to end."
+    },
+    {
+      "id": "B1",
+      "phase": "B. Storage on the monitoring server",
+      "title": "Loki: the logs database (port 3100)",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "equivalent",
+      "goal": "Receive and store every log line sent by Alloy (application, database, website, system) and answer LogQL queries for Grafana.",
+      "commands": [
+        {
+          "cmd": "sudo apt-get install -y loki   # from the Grafana apt repository",
+          "explain": "Installs Loki as the 'loki' systemd service with its configuration in /etc/loki/config.yml."
+        },
+        {
+          "cmd": "sudo nano /etc/loki/config.yml",
+          "explain": "Single-node configuration: storage on the local disk, HTTP port 3100, and the limits we set later (step D3)."
+        },
+        {
+          "cmd": "sudo systemctl enable --now loki",
+          "explain": "Starts Loki now and at every boot."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "curl -s http://127.0.0.1:3100/ready",
+          "expect": "ready"
+        }
+      ],
+      "files": [
+        "monitoring/loki/config.yaml (imported from the live server)",
+        "inventory.env (LOKI_PORT, LOKI_CONFIG_PATH)"
+      ],
+      "notes": "The exact way Loki was installed is recorded by scripts/collect-monitoring.sh (state/monitoring/loki-unit.txt)."
+    },
+    {
+      "id": "B2",
+      "phase": "B. Storage on the monitoring server",
+      "title": "Prometheus in Docker: the metrics database (port 9091)",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "equivalent",
+      "goal": "Store the measurements (CPU, memory, disk, network, database, programs) that Alloy pushes every 15 seconds.",
+      "commands": [
+        {
+          "cmd": "docker run -d --name vps_prometheus --restart unless-stopped -p 9091:9090 \\\n  -v /path/to/prometheus.yml:/etc/prometheus/prometheus.yml:ro -v vps_prom_data:/prometheus \\\n  prom/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.enable-remote-write-receiver",
+          "explain": "Runs Prometheus in a container named vps_prometheus. Port 9091 of the server goes to port 9090 of the container. --web.enable-remote-write-receiver lets Alloy PUSH metrics to /api/v1/write (Prometheus normally pulls). The data lives in a Docker volume, so recreating the container keeps the history."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "curl -s http://127.0.0.1:9091/-/ready",
+          "expect": "Prometheus Server is Ready."
+        },
+        {
+          "cmd": "docker ps --filter name=vps_prometheus",
+          "expect": "Status 'Up ...'"
+        }
+      ],
+      "files": [
+        "monitoring/prometheus/prometheus.yml",
+        "monitoring/prometheus/container.env (exact image, ports, volumes, arguments from docker inspect)"
+      ],
+      "notes": "A port published by Docker is reachable even if ufw does not allow it (Docker writes its own firewall rules). See docs/06-improvements.md."
+    },
+    {
+      "id": "B3",
+      "phase": "B. Storage on the monitoring server",
+      "title": "Grafana (apt) on port 3001",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "equivalent",
+      "goal": "Show the data as dashboards and send the email alerts. The older Grafana in Docker (mon_grafana, port 3000) was left as it was.",
+      "commands": [
+        {
+          "cmd": "sudo apt-get install -y grafana",
+          "explain": "Installs Grafana from the Grafana apt repository (service grafana-server)."
+        },
+        {
+          "cmd": "sudo sed -i 's/^;\\?http_port = .*/http_port = 3001/' /etc/grafana/grafana.ini",
+          "explain": "Port 3000 was already used by the old Docker Grafana, so this one listens on 3001."
+        },
+        {
+          "cmd": "sudo systemctl enable --now grafana-server",
+          "explain": "Starts Grafana now and at every boot."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "curl -s http://127.0.0.1:3001/api/health",
+          "expect": "\"database\": \"ok\""
+        }
+      ],
+      "files": [
+        "monitoring/grafana/settings.ini"
+      ]
+    },
+    {
+      "id": "B4",
+      "phase": "B. Storage on the monitoring server",
+      "title": "Firewall: only the VPS may send data, only through Tailscale",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "equivalent",
+      "goal": "Loki and Prometheus accept data only from the VPS's Tailscale address.",
+      "commands": [
+        {
+          "cmd": "sudo ufw allow in on tailscale0 from 100.69.47.69 to any port 3100 proto tcp",
+          "explain": "Allows the VPS (Tailscale address) to reach Loki, only on the Tailscale interface."
+        },
+        {
+          "cmd": "sudo ufw allow in on tailscale0 from 100.69.47.69 to any port 9091 proto tcp",
+          "explain": "Same for Prometheus."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "timeout 5 bash -c '</dev/tcp/100.118.61.101/3100' && echo open   # from the VPS",
+          "expect": "open"
+        }
+      ],
+      "files": [
+        "monitoring/install.sh (step firewall)"
+      ]
+    },
+    {
+      "id": "C1",
+      "phase": "C. Collection on the application server",
+      "title": "Install Grafana Alloy",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "equivalent",
+      "goal": "One agent that reads the logs and measures the server, then sends everything to the office through Tailscale.",
+      "commands": [
+        {
+          "cmd": "sudo mkdir -p /etc/apt/keyrings\nwget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/grafana.gpg >/dev/null\necho 'deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main' | sudo tee /etc/apt/sources.list.d/grafana.list",
+          "explain": "Adds Grafana's signed apt repository (the key proves the packages really come from Grafana)."
+        },
+        {
+          "cmd": "sudo apt-get update && sudo apt-get install -y alloy",
+          "explain": "Installs Alloy: service 'alloy', configuration /etc/alloy/config.alloy, settings /etc/default/alloy, local web UI on 127.0.0.1:12345."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "systemctl is-active alloy && alloy --version",
+          "expect": "active, then the version"
+        }
+      ],
+      "files": [
+        "vps/install.sh (steps alloy_package)"
+      ]
+    },
+    {
+      "id": "C2",
+      "phase": "C. Collection on the application server",
+      "title": "Let Alloy read the logs",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "equivalent",
+      "goal": "Alloy runs as the unprivileged user 'alloy'; it needs read access to the log files and the system journal.",
+      "commands": [
+        {
+          "cmd": "sudo usermod -aG adm,systemd-journal alloy",
+          "explain": "Group adm can read /var/log/nginx and /var/log/postgresql; group systemd-journal can read the journal."
+        },
+        {
+          "cmd": "sudo -u alloy test -r /path/to/odoo.log && echo readable",
+          "explain": "Checks that the application log file is readable by Alloy (path as written in config.alloy)."
+        },
+        {
+          "cmd": "sudo systemctl restart alloy",
+          "explain": "A new group membership is only seen by a restarted process."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "id alloy",
+          "expect": "groups=...adm...systemd-journal"
+        }
+      ],
+      "files": [
+        "vps/install.sh (step alloy_permissions)"
+      ]
+    },
+    {
+      "id": "C3",
+      "phase": "C. Collection on the application server",
+      "title": "PostgreSQL role for statistics only",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "equivalent",
+      "goal": "Let Alloy read PostgreSQL's statistics (connections, cache, locks, size) without any access to the application data.",
+      "commands": [
+        {
+          "cmd": "sudo -u postgres psql -c \"CREATE ROLE alloy_monitor LOGIN PASSWORD '...';\" -c \"GRANT pg_monitor TO alloy_monitor;\"",
+          "explain": "pg_monitor is a built-in PostgreSQL role that can read statistics views only."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "sudo -u postgres psql -Atc \"select pg_has_role('alloy_monitor','pg_monitor','member')\"",
+          "expect": "t"
+        }
+      ],
+      "files": [
+        "vps/postgres/monitoring-role.sql",
+        "secrets.env (PG_MONITOR_PASSWORD)"
+      ]
+    },
+    {
+      "id": "C4",
+      "phase": "C. Collection on the application server",
+      "title": "Alloy configuration: logs and metrics",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "recorded",
+      "goal": "Describe, block by block, what Alloy reads and where it sends it. Full explanation of every block: docs/03-alloy-explained.md.",
+      "commands": [
+        {
+          "cmd": "sudo nano /etc/alloy/config.alloy",
+          "explain": "Logs: application (multi-line, level and logger extracted), PostgreSQL, Nginx (HTTP status extracted), systemd journal -> loki.write to http://100.118.61.101:3100. Metrics: server (unix exporter), programs (process exporter), PostgreSQL (postgres exporter), availability probes (blackbox), Alloy itself -> prometheus.remote_write to http://100.118.61.101:9091."
+        },
+        {
+          "cmd": "sudo alloy fmt /etc/alloy/config.alloy >/dev/null && echo syntax-ok",
+          "explain": "Checks the syntax before restarting (a typo would stop the whole collection)."
+        },
+        {
+          "cmd": "sudo systemctl restart alloy",
+          "explain": "Loads the new configuration."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "curl -s http://127.0.0.1:12345/-/ready",
+          "expect": "Alloy is ready."
+        },
+        {
+          "cmd": "curl -s http://127.0.0.1:12345/api/v0/web/components | python3 -c 'import json,sys; print({c[\"health\"][\"state\"] for c in json.load(sys.stdin)})'",
+          "expect": "{'healthy'}"
+        }
+      ],
+      "files": [
+        "vps/alloy/config.alloy",
+        "vps/alloy/alloy.default.tmpl",
+        "docs/03-alloy-explained.md"
+      ],
+      "notes": "We added the blocks with a small Python script that replaces each block by its name (safe to run twice). The repository now holds the whole file."
+    },
+    {
+      "id": "C5",
+      "phase": "C. Collection on the application server",
+      "title": "Check that everything arrives",
+      "where": "application server (VPS ov-ab27bf, user devops) and monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "Prove that logs and metrics really reach the office, with no loss.",
+      "commands": [
+        {
+          "cmd": "curl -s http://127.0.0.1:12345/metrics | grep -E 'prometheus_remote_storage_samples_(total|failed_total)'",
+          "explain": "On the VPS: how many measurements Alloy sent, and how many failed. At our check: over 700,000 sent, 0 failed."
+        },
+        {
+          "cmd": "curl -sG http://127.0.0.1:3100/loki/api/v1/query --data-urlencode 'query=sum(count_over_time({host=\"vps-web\"}[5m]))'",
+          "explain": "On n8nserver: number of log lines received in the last 5 minutes."
+        },
+        {
+          "cmd": "curl -sG http://127.0.0.1:9091/api/v1/query --data-urlencode 'query=count(node_cpu_seconds_total{host=\"vps-web\"})'",
+          "explain": "On n8nserver: the server's CPU measurements are in Prometheus."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "bash scripts/check.sh vps   # and: bash scripts/check.sh monitoring",
+          "expect": "All checks passed."
+        }
+      ],
+      "files": [
+        "scripts/check.sh"
+      ]
+    },
+    {
+      "id": "D1",
+      "phase": "D. Dashboards",
+      "title": "Grafana data sources",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "Tell Grafana where the data is.",
+      "commands": [
+        {
+          "cmd": "Grafana > Connections > Data sources > Add: Loki, URL http://127.0.0.1:3100, name 'loki'",
+          "explain": "The logs. Name 'loki' is used by the dashboards and the alert rules."
+        },
+        {
+          "cmd": "Add: Prometheus, URL http://127.0.0.1:9091, access 'proxy', name 'prometheus-2'",
+          "explain": "The metrics. We had to fix its URL and access mode (step D3)."
+        },
+        {
+          "cmd": "Existing PostgreSQL data source 'BBi' (read-only access to the application database)",
+          "explain": "Used for the user activity panels (who is connected, what they do)."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "Grafana > Data sources > each one > 'Save & test'",
+          "expect": "green 'Data source is working'"
+        }
+      ],
+      "files": [
+        "monitoring/grafana/provisioning/datasources/*.tmpl (generated from the live Grafana by scripts/import.py)"
+      ]
+    },
+    {
+      "id": "D2",
+      "phase": "D. Dashboards",
+      "title": "The four dashboards (generated as code)",
+      "where": "your Mac (generation) and monitoring server (office VM n8nserver, user devops01) (import)",
+      "source": "recorded",
+      "goal": "Three dashboards for three questions (is it fast, what went wrong, is the server strong enough) plus user activity.",
+      "commands": [
+        {
+          "cmd": "python3 tools/dashboards/make_activite.py      # 1. Activité et performances\npython3 tools/dashboards/make_journaux.py      # 2. Journaux et erreurs\npython3 tools/dashboards/make_ressources.py    # 3. Consommation du serveur (incl. the 31 application workers)\npython3 tools/dashboards/make_utilisateurs.py  # 4. Activité des utilisateurs",
+          "explain": "Each script builds a dashboard JSON (panels, LogQL / PromQL / SQL queries, thresholds green/yellow/red) with the shared library dash_lib.py, into monitoring/grafana/dashboards/."
+        },
+        {
+          "cmd": "Grafana > Dashboards > New > Import > upload the JSON",
+          "explain": "How we loaded them at first. Now monitoring/install.sh loads them automatically (file provisioning)."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "Open each dashboard over the last hour",
+          "expect": "No panel shows 'No data' or a red error triangle."
+        }
+      ],
+      "files": [
+        "tools/dashboards/",
+        "monitoring/grafana/dashboards/*.json",
+        "monitoring/grafana/provisioning/dashboards/supervision.yaml.tmpl"
+      ]
+    },
+    {
+      "id": "D3",
+      "phase": "D. Dashboards",
+      "title": "Fixes made along the way",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "Problems we met and how we solved them.",
+      "commands": [
+        {
+          "cmd": "limits_config:\n  max_line_size: 256KB\n  max_line_size_truncate: true",
+          "explain": "In the Loki configuration: very long application log lines (tracebacks) were rejected; now they are kept, cut at 256 KB."
+        },
+        {
+          "cmd": "PUT /api/datasources/uid/<uid> with url=http://127.0.0.1:9091 and access=proxy",
+          "explain": "The 'prometheus-2' data source pointed to a wrong address: CPU, memory and disk panels showed 'No data'."
+        },
+        {
+          "cmd": "{job=\"postgresql\"} |~ \" (ERROR|FATAL|PANIC):\"",
+          "explain": "The PostgreSQL error panels used a 'level' label that PostgreSQL logs do not have: replaced by a text filter."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "Dashboards over the last hour",
+          "expect": "All panels have data."
+        }
+      ],
+      "files": [
+        "monitoring/loki/config.yaml"
+      ]
+    },
+    {
+      "id": "E1",
+      "phase": "E. Access from the office",
+      "title": "http://dashboard.local on the office network",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "An easy address that works from any computer or phone of the office network, and nowhere else.",
+      "commands": [
+        {
+          "cmd": "sudo apt-get install -y nginx avahi-daemon avahi-utils",
+          "explain": "Nginx = web server in front of Grafana; Avahi = announces names on the local network (mDNS, the '.local' names)."
+        },
+        {
+          "cmd": "/etc/nginx/sites-available/dashboard.local  (proxy_pass to Grafana) + ln -s into sites-enabled",
+          "explain": "Nginx answers on port 80 for the name dashboard.local and forwards to Grafana (including websockets for live updates)."
+        },
+        {
+          "cmd": "/etc/systemd/system/avahi-alias-dashboard.service: avahi-publish -a -R dashboard.local 192.168.15.14",
+          "explain": "A small service that keeps announcing 'dashboard.local = 192.168.15.14' on the office network."
+        },
+        {
+          "cmd": "sudo ufw allow from 192.168.15.0/24 to any port 80 proto tcp\nsudo ufw allow from 192.168.15.0/24 to any port 5353 proto udp",
+          "explain": "Port 80 and the mDNS announcements, for the office network only. Missing port 80 rule = the 'timed out' error we saw."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "avahi-resolve -4 -n dashboard.local",
+          "expect": "dashboard.local 192.168.15.14"
+        },
+        {
+          "cmd": "curl -s -o /dev/null -w '%{http_code}' -H 'Host: dashboard.local' http://127.0.0.1/",
+          "expect": "200 or 302 (a 502 means Nginx cannot reach Grafana: wrong upstream address, which we fixed)"
+        }
+      ],
+      "files": [
+        "monitoring/nginx/dashboard.local.conf.tmpl",
+        "monitoring/systemd/avahi-alias-dashboard.service.tmpl",
+        "inventory.env (DASHBOARD_UPSTREAM)"
+      ]
+    },
+    {
+      "id": "F1",
+      "phase": "F. Email alerts",
+      "title": "Mail relay (Postfix) on the VPS",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "recorded",
+      "goal": "Send the alert emails directly to the recipients' mail servers, without any external SMTP account.",
+      "commands": [
+        {
+          "cmd": "timeout 8 bash -c '</dev/tcp/gmail-smtp-in.l.google.com/25' && echo open",
+          "explain": "Checks that the hosting provider does not block outgoing port 25 (needed to deliver mail directly)."
+        },
+        {
+          "cmd": "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postfix",
+          "explain": "Installs Postfix without questions ('Internet Site' preset)."
+        },
+        {
+          "cmd": "sudo postconf -e 'inet_interfaces = 127.0.0.1, 100.69.47.69' 'mynetworks = 127.0.0.0/8 100.118.61.101/32' ...",
+          "explain": "Listens only on localhost and the Tailscale address; relays only for n8nserver; every alert leaves with one sender address (sender_canonical)."
+        },
+        {
+          "cmd": "/etc/systemd/system/postfix@-.service.d/tailscale.conf (After=tailscaled, Restart=on-failure)",
+          "explain": "Postfix waits for the Tailscale address at boot, and retries if it is not ready."
+        },
+        {
+          "cmd": "sudo ufw allow in on tailscale0 from 100.118.61.101 to any port 25 proto tcp",
+          "explain": "Only n8nserver can hand mail to this relay."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "printf 'Subject: test\\n\\ntest\\n' | sendmail -f alertes@<domain> devops01@brothersbusinessintelligence.com; sudo journalctl -u postfix@- -n 20 | grep status=",
+          "expect": "status=sent (250 ...)"
+        }
+      ],
+      "files": [
+        "vps/postfix/main.cf.settings",
+        "vps/postfix/sender_canonical.tmpl",
+        "vps/systemd/postfix@-.service.d/tailscale.conf"
+      ]
+    },
+    {
+      "id": "F2",
+      "phase": "F. Email alerts",
+      "title": "Grafana alert rules and email contact point",
+      "where": "monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "An email within about a minute when something goes wrong, a reminder every 4 hours, and a 'resolved' email.",
+      "commands": [
+        {
+          "cmd": "[smtp] enabled = true, host = 100.69.47.69:25, startTLS_policy = NoStartTLS   (in /etc/grafana/grafana.ini)",
+          "explain": "Grafana hands its emails to the Postfix relay through Tailscale (private link, no password)."
+        },
+        {
+          "cmd": "/etc/grafana/provisioning/alerting/supervision-odoo.yaml",
+          "explain": "Alerting as code: contact point 'Équipe supervision' (the recipients), the notification policy (group, wait 30 s, repeat 4 h) and 5 rules: application errors, PostgreSQL errors, website 5xx, application silent for 30 min, system service errors."
+        },
+        {
+          "cmd": "sudo systemctl restart grafana-server",
+          "explain": "Grafana reads provisioning files at start."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "Grafana > Alerting > Contact points > Équipe supervision > Test",
+          "expect": "the test email arrives (check spam the first time)"
+        }
+      ],
+      "files": [
+        "monitoring/grafana/settings.ini",
+        "monitoring/grafana/provisioning/alerting/supervision-odoo.yaml.tmpl",
+        "docs/04-alerts-runbook.md"
+      ]
+    },
+    {
+      "id": "G1",
+      "phase": "G. Security review",
+      "title": "Open ports review",
+      "where": "application server (VPS ov-ab27bf, user devops)",
+      "source": "recorded",
+      "goal": "Make sure only the necessary doors are open to the internet.",
+      "commands": [
+        {
+          "cmd": "sudo ss -tulpn",
+          "explain": "Every listening port and its program. 0.0.0.0 / [::] = every network; 127.0.0.1 = local only; 100.x = Tailscale only."
+        },
+        {
+          "cmd": "sudo ufw status numbered",
+          "explain": "What the firewall lets in."
+        },
+        {
+          "cmd": "nmap -Pn 83.228.207.124   # from another machine",
+          "explain": "The real view from outside."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "sudo ss -tulpn",
+          "expect": "Public: 22 (SSH), 80/443 (website), UDP 41641 (Tailscale). Database, application, Alloy, Postfix: local or Tailscale only."
+        }
+      ],
+      "files": [
+        "state/vps/ports.txt",
+        "state/vps/ufw-status.txt",
+        "docs/06-improvements.md"
+      ],
+      "notes": "Found: avahi-daemon running on the VPS (not needed there) and an old ufw rule for 5432 (PostgreSQL listens on 127.0.0.1 anyway)."
+    },
+    {
+      "id": "H1",
+      "phase": "H. Configuration in Git",
+      "title": "This repository",
+      "where": "your Mac, application server (VPS ov-ab27bf, user devops), monitoring server (office VM n8nserver, user devops01)",
+      "source": "recorded",
+      "goal": "Everything needed to understand, check and rebuild the monitoring stack, in one versioned place.",
+      "commands": [
+        {
+          "cmd": "scp scripts/collect-vps.sh devops@83.228.207.124:/tmp/ && ssh -t devops@83.228.207.124 sudo bash /tmp/collect-vps.sh",
+          "explain": "Exports the live VPS configuration with secrets removed into /tmp/collect-vps-<date>.tgz (changes nothing)."
+        },
+        {
+          "cmd": "scp scripts/collect-monitoring.sh devops01@192.168.15.14:/tmp/ && ssh -t devops01@192.168.15.14 sudo bash /tmp/collect-monitoring.sh",
+          "explain": "Same for n8nserver (Loki, Prometheus container, Grafana data sources and dashboards, dashboard.local)."
+        },
+        {
+          "cmd": "scp 'devops@83.228.207.124:/tmp/collect-vps-*.tgz' _import/\nscp 'devops01@192.168.15.14:/tmp/collect-monitoring-*.tgz' _import/",
+          "explain": "Brings both archives into the repository's _import/ folder (ignored by git)."
+        },
+        {
+          "cmd": "python3 scripts/import.py _import/*.tgz && git diff",
+          "explain": "Puts each live file in its place in the repository and fills the live values (uids, paths) in inventory.env."
+        },
+        {
+          "cmd": "git add -A && git commit -m 'Import live configuration' && git push",
+          "explain": "Records this state in the history and sends it to the private remote repository."
+        }
+      ],
+      "verify": [
+        {
+          "cmd": "git status",
+          "expect": "nothing to commit, working tree clean"
+        }
+      ],
+      "files": [
+        "scripts/collect-vps.sh",
+        "scripts/collect-monitoring.sh",
+        "scripts/import.py",
+        "docs/02-rebuild.md"
+      ]
+    }
+  ]
+}

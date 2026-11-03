@@ -1,0 +1,1214 @@
+{
+  "title": "Supervision Odoo · Journaux et erreurs",
+  "uid": "supervision-odoo-journaux",
+  "description": "Erreurs Odoo, PostgreSQL, Nginx et système, contrôle de la collecte et recherche dans les journaux.",
+  "tags": [
+    "supervision-odoo",
+    "odoo",
+    "journaux"
+  ],
+  "links": [
+    {
+      "title": "Autres pages de supervision",
+      "type": "dashboards",
+      "tags": [
+        "supervision-odoo"
+      ],
+      "asDropdown": false,
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "icon": "external link"
+    }
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "type": "custom",
+        "name": "service",
+        "label": "Service",
+        "query": "Odoo : odoo,PostgreSQL : postgresql,Nginx : nginx,Système : systemd-journal",
+        "current": {
+          "selected": true,
+          "text": "Odoo",
+          "value": "odoo"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "Odoo",
+            "value": "odoo"
+          },
+          {
+            "selected": false,
+            "text": "PostgreSQL",
+            "value": "postgresql"
+          },
+          {
+            "selected": false,
+            "text": "Nginx",
+            "value": "nginx"
+          },
+          {
+            "selected": false,
+            "text": "Système",
+            "value": "systemd-journal"
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "hide": 0
+      },
+      {
+        "type": "textbox",
+        "name": "recherche",
+        "label": "Rechercher",
+        "query": "",
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "description": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Journaux et erreurs.** Les compteurs du haut couvrent la période choisie : un 0 est la situation normale. Pour lire un journal, choisissez le **Service** et tapez un mot dans **Rechercher** (nom de module, code d'erreur, référence…) : les listes se filtrent aussitôt."
+      }
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "Résumé des erreurs",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Erreurs Odoo",
+      "description": "Erreurs ERROR ou CRITICAL d'Odoo sur la période. Toute valeur au-dessus de 0 est rouge.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\", level=~\"ERROR|CRITICAL\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Erreurs PostgreSQL",
+      "description": "Erreurs ERROR, FATAL ou PANIC de la base sur la période. Toute valeur au-dessus de 0 est rouge.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"postgresql\"} |~ \" (ERROR|FATAL|PANIC):\" [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Erreurs web 5xx",
+      "description": "Erreurs renvoyées aux visiteurs par le serveur web sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", status=~\"5..\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Requêtes refusées 4xx",
+      "description": "Pages introuvables ou accès refusés (403, 404…) sur la période. Jaune dès qu'il y en a une.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", status=~\"4..\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Erreurs système",
+      "description": "Erreurs des services et du noyau (journal systemd) sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Avertissements Odoo",
+      "description": "Avertissements Odoo sur la période. Information seulement : souvent sans gravité.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\", level=\"WARNING\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Collecte des journaux (contrôle)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Lignes Odoo reçues",
+      "description": "Contrôle du transfert. Rouge = aucune ligne reçue sur la période : vérifier Alloy sur le serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Lignes PostgreSQL reçues",
+      "description": "Contrôle du transfert. Rouge = aucune ligne reçue sur la période : vérifier Alloy sur le serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"postgresql\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Lignes Nginx reçues",
+      "description": "Contrôle du transfert. Rouge = aucune ligne reçue sur la période : vérifier Alloy sur le serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", stream=\"access\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Lignes système reçues",
+      "description": "Contrôle du transfert. Rouge = aucune ligne reçue sur la période : vérifier Alloy sur le serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"systemd-journal\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Tendance",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Erreurs par minute, par source",
+      "description": "Erreurs de chaque source au cours du temps. Un pic correspond à un incident.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Odoo"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PostgreSQL"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Web 5xx"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Système"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\", level=~\"ERROR|CRITICAL\"} [1m]))",
+          "legendFormat": "Odoo"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"postgresql\"} |~ \" (ERROR|FATAL|PANIC):\" [1m]))",
+          "legendFormat": "PostgreSQL"
+        },
+        {
+          "refId": "C",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", status=~\"5..\"} [1m]))",
+          "legendFormat": "Web 5xx"
+        },
+        {
+          "refId": "D",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} [1m]))",
+          "legendFormat": "Système"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Lignes de journal par minute, par service",
+      "description": "Volume de journaux reçus. Une courbe qui tombe à zéro signale un service ou un transfert arrêté.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "odoo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Odoo"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "postgresql"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PostgreSQL"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nginx"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Nginx"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "systemd-journal"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Système"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum by (job) (count_over_time({job=~\".+\"} [1m]))",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "row",
+      "title": "Erreurs détaillées (filtrées par « Rechercher »)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "panels": []
+    },
+    {
+      "id": 18,
+      "type": "logs",
+      "title": "Erreurs Odoo",
+      "description": "Chaque erreur Odoo (ERROR ou CRITICAL), la plus récente en haut.",
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"odoo\", level=~\"ERROR|CRITICAL\"} |~ \"(?i)$recherche\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 19,
+      "type": "logs",
+      "title": "Erreurs PostgreSQL",
+      "description": "Chaque erreur PostgreSQL (ERROR, FATAL ou PANIC), la plus récente en haut.",
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"postgresql\"} |~ \" (ERROR|FATAL|PANIC):\" |~ \"(?i)$recherche\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 20,
+      "type": "logs",
+      "title": "Erreurs système",
+      "description": "Erreurs des services et du noyau, la plus récente en haut.",
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 34
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} |~ \"(?i)$recherche\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 21,
+      "type": "logs",
+      "title": "Journal d'erreurs Nginx",
+      "description": "Erreurs et avertissements écrits par le serveur web.",
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"nginx\", stream=\"error\"} |~ \"(?i)$recherche\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 22,
+      "type": "row",
+      "title": "Services système en erreur",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "panels": []
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Services en erreur (période)",
+      "description": "Services qui ont produit des erreurs sur la période affichée.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 47
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum by (unit) (count_over_time({job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "unit": "Service",
+              "Value #A": "Erreurs"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Erreurs",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "Erreurs système par minute (5 services les plus touchés)",
+      "description": "Erreurs par minute pour les services les plus touchés.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 47
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "topk(5, sum by (unit) (count_over_time({job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} [5m])))",
+          "legendFormat": "{{unit}}"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "type": "row",
+      "title": "Explorer un journal (choisir « Service » et « Rechercher » en haut)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 55
+      },
+      "panels": []
+    },
+    {
+      "id": 26,
+      "type": "logs",
+      "title": "Journal du service choisi",
+      "description": "Toutes les lignes du service choisi, filtrées par le texte recherché.",
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"$service\"} |~ \"(?i)$recherche\"",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 27,
+      "type": "row",
+      "title": "Avertissements Odoo (cliquer pour afficher)",
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 72
+      },
+      "panels": [
+        {
+          "id": 28,
+          "type": "logs",
+          "title": "Avertissements Odoo",
+          "description": "Avertissements Odoo. Beaucoup viennent du démarrage des modules et se répètent pour chaque processus : à lire si une nouveauté apparaît.",
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 73
+          },
+          "datasource": "loki",
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": "loki",
+              "expr": "{job=\"odoo\", level=\"WARNING\"} |~ \"(?i)$recherche\"",
+              "legendFormat": ""
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "showLabels": false,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "prettifyLogMessage": false,
+            "enableLogDetails": true,
+            "dedupStrategy": "none",
+            "sortOrder": "Descending"
+          }
+        }
+      ]
+    }
+  ]
+}

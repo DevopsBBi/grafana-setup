@@ -1,0 +1,1856 @@
+{
+  "title": "Supervision Odoo · Activité et performances",
+  "uid": "supervision-odoo-activite",
+  "description": "Trafic, temps de réponse, base de données et activité des utilisateurs Odoo.",
+  "tags": [
+    "supervision-odoo",
+    "odoo"
+  ],
+  "links": [
+    {
+      "title": "Autres pages de supervision",
+      "type": "dashboards",
+      "tags": [
+        "supervision-odoo"
+      ],
+      "asDropdown": false,
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "icon": "external link"
+    }
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "description": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Activité et performances d'Odoo.** Trafic, temps de réponse, base de données et utilisateurs. Vert = normal, jaune = à surveiller, rouge = à traiter. Les pages « Journaux et erreurs » et « Consommation du serveur » s'ouvrent avec le lien en haut de page."
+      }
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "En un coup d'œil",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Requêtes par minute",
+      "description": "Requêtes traitées par Odoo pendant la dernière minute.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" [1m]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Temps de réponse médian",
+      "description": "La moitié des requêtes sont plus rapides que cette valeur. Jaune au-delà de 1 s, rouge au-delà de 2 s.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "quantile_over_time(0.5, {job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap total_time [$__range]) by (job)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Temps de réponse lent (95 %)",
+      "description": "95 requêtes sur 100 sont plus rapides que cette valeur. Jaune au-delà de 1 s, rouge au-delà de 2 s.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "quantile_over_time(0.95, {job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap total_time [$__range]) by (job)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Requêtes en erreur",
+      "description": "Part des requêtes Odoo terminées par une erreur serveur (5xx). Jaune au-delà de 1 %, rouge au-delà de 5 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 3
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "unit": "percent",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "100 * sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" 5[0-9]{2} ` [$__range])) / sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Utilisateurs connectés (période)",
+      "description": "Utilisateurs dont la dernière connexion est dans la période affichée.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 3
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM res_users u\nWHERE u.active AND $__timeFilter(u.login_date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Connexions à la base utilisées",
+      "description": "Part des connexions possibles à la base déjà ouvertes, maintenant. Jaune dès 70 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 3
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) / current_setting('max_connections')::int, 1) AS \"Connexions utilisées\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend'"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Odoo : temps de réponse et trafic",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Temps de réponse : typique et lent",
+      "description": "Le trait vert est ce que vit la majorité des utilisateurs. L'orange est le cas lent.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typique (médiane)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lent (95e centile)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "quantile_over_time(0.5, {job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap total_time [5m]) by (job)",
+          "legendFormat": "typique (médiane)"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "quantile_over_time(0.95, {job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap total_time [5m]) by (job)",
+          "legendFormat": "lent (95e centile)"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Requêtes par minute, selon le résultat",
+      "description": "Chaque requête est un succès, une redirection ou une erreur. Le rouge doit rester proche de zéro.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Succès (2xx)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Redirection (3xx)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Erreur client (4xx)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Erreur serveur (5xx)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" 2[0-9]{2} ` [1m]))",
+          "legendFormat": "Succès (2xx)"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" 3[0-9]{2} ` [1m]))",
+          "legendFormat": "Redirection (3xx)"
+        },
+        {
+          "refId": "C",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" 4[0-9]{2} ` [1m]))",
+          "legendFormat": "Erreur client (4xx)"
+        },
+        {
+          "refId": "D",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" 5[0-9]{2} ` [1m]))",
+          "legendFormat": "Erreur serveur (5xx)"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Parties de l'application les plus utilisées",
+      "description": "Quelles parties de l'application reçoivent le plus de trafic, et leur poids sur la base.",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requêtes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requêtes SQL (moy.)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temps SQL moy. (s)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temps de réponse moy. (s)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum by (section) (count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | section!=\"/web/static\" [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | section!=\"/web/static\" | unwrap sql_count [$__range]) by (section)",
+          "legendFormat": "",
+          "queryType": "instant"
+        },
+        {
+          "refId": "C",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | section!=\"/web/static\" | unwrap sql_time [$__range]) by (section)",
+          "legendFormat": "",
+          "queryType": "instant"
+        },
+        {
+          "refId": "D",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | section!=\"/web/static\" | unwrap total_time [$__range]) by (section)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "section": "Section",
+              "Value #A": "Requêtes",
+              "Value #B": "Requêtes SQL (moy.)",
+              "Value #C": "Temps SQL moy. (s)",
+              "Value #D": "Temps de réponse moy. (s)"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Requêtes",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "Base de données : charge et requêtes",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Requêtes SQL par page (moyenne)",
+      "description": "Nombre moyen de requêtes SQL exécutées pour afficher une page Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 25
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap sql_count [$__range]) by (job)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Temps SQL par page (moyenne)",
+      "description": "Temps moyen passé à attendre la base pour une page Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 25
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap sql_time [$__range]) by (job)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Requêtes en cours",
+      "description": "Requêtes que la base exécute en ce moment.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 25
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"Requêtes en cours\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend' AND state = 'active' AND pid <> pg_backend_pid()"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Requêtes bloquées",
+      "description": "Requêtes qui attendent qu'une autre libère un verrou. Jaune dès 1, rouge dès 5.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 25
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"Requêtes bloquées\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend' AND wait_event_type = 'Lock'"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Requête la plus longue",
+      "description": "Durée de la requête en cours la plus ancienne. Jaune au-delà de 30 s, rouge au-delà de 2 min.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 25
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "s",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 120
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(MAX(EXTRACT(EPOCH FROM now() - query_start)), 0) AS \"Durée\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend' AND state = 'active' AND pid <> pg_backend_pid()"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Lectures servies par le cache",
+      "description": "Part des lectures servies depuis la mémoire plutôt que le disque. Vert au-dessus de 99 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 25
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * blks_hit / NULLIF(blks_hit + blks_read, 0), 2) AS \"Cache\"\nFROM pg_stat_database\nWHERE datname = current_database()"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Requêtes SQL par page",
+      "description": "Un saut brusque signale souvent une page lente ou une nouveauté.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "moyenne"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "95 %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap sql_count [5m]) by (job)",
+          "legendFormat": "moyenne"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "quantile_over_time(0.95, {job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap sql_count [5m]) by (job)",
+          "legendFormat": "95 %"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Temps passé dans la base par page (secondes)",
+      "description": "Temps moyen passé à attendre la base de données, par page.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 29
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | unwrap sql_time [5m]) by (job)",
+          "legendFormat": "moyenne"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Connexions par état",
+      "description": "Connexions ouvertes, par état (active = en train de travailler, idle = en attente).",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 37
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(state, 'inconnu') AS \"État\", COUNT(*) AS \"Connexions\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend'\nGROUP BY 1\nORDER BY 2 DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Requêtes en cours les plus longues",
+      "description": "Requêtes encore en cours, de la plus ancienne à la plus récente.",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 37
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(EXTRACT(EPOCH FROM now() - query_start)::numeric, 1) AS \"Durée (s)\",\n       state AS \"État\",\n       COALESCE(wait_event_type, '') AS \"Attente\",\n       LEFT(regexp_replace(query, '\\s+', ' ', 'g'), 80) AS \"Début de la requête\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend' AND state <> 'idle' AND pid <> pg_backend_pid()\nORDER BY query_start ASC NULLS LAST\nLIMIT 10"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 24,
+      "type": "row",
+      "title": "Serveur web (Nginx)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "panels": []
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Requêtes reçues (période)",
+      "description": "Toutes les requêtes reçues par le serveur web sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 46
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", stream=\"access\", status=~\".+\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "Requêtes refusées 4xx (période)",
+      "description": "Requêtes refusées ou introuvables (403, 404…). Jaune dès qu'il y en a une.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 46
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", status=~\"4..\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "stat",
+      "title": "Erreurs serveur 5xx (période)",
+      "description": "Erreurs côté serveur sur la période. Toute valeur au-dessus de 0 est rouge.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 46
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"nginx\", status=~\"5..\"} [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 28,
+      "type": "stat",
+      "title": "Données envoyées (période)",
+      "description": "Volume de données envoyé par le serveur web sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 46
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "decbytes",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(sum_over_time({job=\"nginx\", stream=\"access\"} | regexp `^(?P<ip>[^ ]+) [^ ]+ [^ ]+ \\[[^\\]]+\\] \"(?P<method>[A-Z]+) (?P<path>[^ ?\"]*)[^\"]*\" (?P<code>[0-9]{3}) (?P<bytes>[0-9]+)` | __error__=\"\" | unwrap bytes [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 29,
+      "type": "timeseries",
+      "title": "Requêtes par minute, par code HTTP",
+      "description": "Requêtes reçues par le serveur web, par code de réponse.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum by (status) (count_over_time({job=\"nginx\", stream=\"access\", status=~\".+\"} [1m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "table",
+      "title": "Pages les plus demandées (hors fichiers statiques)",
+      "description": "Les 10 chemins les plus demandés au serveur web sur la période.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requêtes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "topk(10, sum by (path) (count_over_time({job=\"nginx\", stream=\"access\"} | regexp `^(?P<ip>[^ ]+) [^ ]+ [^ ]+ \\[[^\\]]+\\] \"(?P<method>[A-Z]+) (?P<path>[^ ?\"]*)[^\"]*\" (?P<code>[0-9]{3}) (?P<bytes>[0-9]+)` | __error__=\"\" | path!~\"/web/static.*\" [$__range])))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "path": "Chemin",
+              "Value #A": "Requêtes"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Requêtes",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 31,
+      "type": "row",
+      "title": "Utilisateurs : qui fait quoi",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 58
+      },
+      "panels": []
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Personnes ayant agi (période)",
+      "description": "Personnes différentes qui ont écrit dans une fiche sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 59
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT m.author_id) FROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "Messages et notes (période)",
+      "description": "Messages et notes écrits par les utilisateurs sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 59
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 34,
+      "type": "stat",
+      "title": "Valeurs modifiées (période)",
+      "description": "Modifications de champs suivis (statut, montant, étape…) sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 59
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM mail_tracking_value tv\nJOIN mail_message m ON m.id = tv.mail_message_id\nWHERE $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 35,
+      "type": "timeseries",
+      "title": "Activité par heure",
+      "description": "Messages et notes écrits par les utilisateurs, heure par heure.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 63
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(m.date, '1h') AS time, COUNT(*) AS \"Actions\"\nFROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)\nGROUP BY 1\nORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "type": "table",
+      "title": "Par utilisateur : dernière connexion et activité",
+      "description": "Une ligne par utilisateur actif : dernière connexion, nombre d'actions et dernière action sur la période.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 63
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT p.name AS \"Utilisateur\",\n       u.login_date AS \"Dernière connexion\",\n       COALESCE(s.nb, 0) AS \"Actions (période)\",\n       s.last_at AS \"Dernière action\"\nFROM res_users u\nJOIN res_partner p ON p.id = u.partner_id\nLEFT JOIN (\n    SELECT m.author_id, COUNT(*) AS nb, MAX(m.date) AS last_at\n    FROM mail_message m\n    WHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)\n    GROUP BY m.author_id\n) s ON s.author_id = p.id\nWHERE u.active\nORDER BY \"Dernière connexion\" DESC NULLS LAST\nLIMIT 100"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 37,
+      "type": "table",
+      "title": "Derniers messages et notes",
+      "description": "Qui a écrit quoi, sur quelle fiche, et le début du message (200 dernières lignes de la période).",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 71
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT m.date AS \"Date\",\n       p.name AS \"Utilisateur\",\n       m.model AS \"Type de fiche\",\n       m.res_id AS \"N° fiche\",\n       LEFT(regexp_replace(COALESCE(m.body, ''), '<[^>]+>', ' ', 'g'), 150) AS \"Message\"\nFROM mail_message m\nJOIN res_partner p ON p.id = m.author_id\nWHERE $__timeFilter(m.date)\nORDER BY m.date DESC\nLIMIT 200"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 38,
+      "type": "table",
+      "title": "Modifications de champs suivis",
+      "description": "Qui a changé quelle valeur, de quoi à quoi, sur quelle fiche (200 dernières lignes de la période).",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 81
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT m.date AS \"Date\",\n       p.name AS \"Utilisateur\",\n       m.model AS \"Type de fiche\",\n       m.res_id AS \"N° fiche\",\n       f.name AS \"Champ\",\n       tv.old_value_char AS \"Avant\",\n       tv.new_value_char AS \"Après\"\nFROM mail_tracking_value tv\nJOIN mail_message m ON m.id = tv.mail_message_id\nLEFT JOIN res_partner p ON p.id = m.author_id\nLEFT JOIN ir_model_fields f ON f.id = tv.field_id\nWHERE $__timeFilter(m.date)\nORDER BY m.date DESC\nLIMIT 200"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

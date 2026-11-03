@@ -1,0 +1,7 @@
+## Settings of the Grafana Alloy service (/etc/default/alloy), read by systemd (EnvironmentFile).
+CONFIG_FILE="/etc/alloy/config.alloy"
+CUSTOM_ARGS=""
+RESTART_ON_UPGRADE=true
+
+# Secret: read in config.alloy with sys.env("ALLOY_PG_DSN"). This file is root:alloy, mode 640.
+ALLOY_PG_DSN="postgresql://@@PG_MONITOR_USER@@:@@PG_MONITOR_PASSWORD|url@@@127.0.0.1:5432/postgres?sslmode=disable"

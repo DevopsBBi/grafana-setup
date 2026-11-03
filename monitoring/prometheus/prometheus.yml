@@ -1,0 +1,2 @@
+# @@NOT-IMPORTED@@
+# Replaced by the live prometheus.yml of the vps_prometheus container (scripts/collect-monitoring.sh + scripts/import.py).

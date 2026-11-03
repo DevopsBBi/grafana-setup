@@ -1,0 +1,12 @@
+# Postfix settings applied with "postconf -e" by vps/install.sh (one per line; names between double @ signs are inventory.env values).
+# Postfix only listens on localhost and on the Tailscale address, and only relays for the monitoring server.
+myhostname = @@MAILNAME@@
+inet_interfaces = 127.0.0.1, @@APP_TS_IP@@
+inet_protocols = ipv4
+mydestination = localhost
+mynetworks = 127.0.0.0/8 @@MON_TS_IP@@/32
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+smtp_tls_security_level = may
+myorigin = @@MAIL_DOMAIN@@
+sender_canonical_maps = regexp:/etc/postfix/sender_canonical
+local_header_rewrite_clients = permit_inet_interfaces, permit_mynetworks

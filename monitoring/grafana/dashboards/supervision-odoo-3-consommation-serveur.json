@@ -1,0 +1,2836 @@
+{
+  "title": "Supervision Odoo · Consommation du serveur",
+  "uid": "supervision-odoo-ressources",
+  "description": "Processeur, mémoire, disque, réseau, base de données et volume web du serveur Odoo.",
+  "tags": [
+    "supervision-odoo",
+    "serveur",
+    "ressources"
+  ],
+  "links": [
+    {
+      "title": "Autres pages de supervision",
+      "type": "dashboards",
+      "tags": [
+        "supervision-odoo"
+      ],
+      "asDropdown": false,
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "icon": "external link"
+    }
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "description": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Consommation du serveur Odoo.** Processeur, mémoire, disque et réseau du serveur, puis la part de chaque composant (Odoo, PostgreSQL, Nginx et autres programmes), l'espace de la base de données (source BBi) et le volume envoyé par le serveur web. **À savoir :** tant que la source « prometheus-2 » est en erreur, les blocs processeur, mémoire, disque et réseau restent vides."
+      }
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "En ce moment",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Processeur (CPU)",
+      "description": "Part du temps où le processeur travaille. Jaune dès 70 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 3
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false
+      }
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "Mémoire (RAM)",
+      "description": "Part de la mémoire vive utilisée. Jaune dès 70 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false
+      }
+    },
+    {
+      "id": 5,
+      "type": "gauge",
+      "title": "Mémoire d'échange (swap)",
+      "description": "Part du swap utilisée. Le serveur ralentit quand il s'en sert beaucoup. Jaune dès 30 %, rouge dès 70 %.",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * (1 - node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false
+      }
+    },
+    {
+      "id": 6,
+      "type": "gauge",
+      "title": "Disque le plus plein",
+      "description": "Partition la plus remplie du serveur. Jaune dès 75 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 75
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "max(100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|devtmpfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|devtmpfs\"}))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": true,
+        "showThresholdLabels": false
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Cœurs de processeur",
+      "description": "Nombre de cœurs du serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "count(count by (cpu) (node_cpu_seconds_total))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Charge (1 min)",
+      "description": "Nombre moyen de tâches en attente du processeur. Au-delà du nombre de cœurs, le serveur sature.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "node_load1",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Mémoire utilisée",
+      "description": "Mémoire vive utilisée en ce moment.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Mémoire totale",
+      "description": "Mémoire vive installée sur le serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "node_memory_MemTotal_bytes",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Démarré depuis",
+      "description": "Temps écoulé depuis le dernier redémarrage du serveur.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "time() - node_boot_time_seconds",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Services en échec",
+      "description": "Services systemd arrêtés sur une erreur. Toute valeur au-dessus de 0 est rouge.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 9
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(node_systemd_unit_state{state=\"failed\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "Consommation par composant : Odoo, PostgreSQL, Nginx et autres",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Odoo : processeur",
+      "description": "Part du processeur du serveur utilisée par Odoo. Jaune dès 50 %, rouge dès 80 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * sum(rate(namedprocess_namegroup_cpu_seconds_total{groupname=\"odoo\"}[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Odoo : mémoire",
+      "description": "Mémoire vive utilisée par tous les processus de Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_memory_bytes{groupname=\"odoo\", memtype=\"resident\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "PostgreSQL : processeur",
+      "description": "Part du processeur du serveur utilisée par PostgreSQL. Jaune dès 50 %, rouge dès 80 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * sum(rate(namedprocess_namegroup_cpu_seconds_total{groupname=\"postgresql\"}[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "PostgreSQL : mémoire",
+      "description": "Mémoire vive utilisée par tous les processus de PostgreSQL.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_memory_bytes{groupname=\"postgresql\", memtype=\"resident\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Nginx : processeur",
+      "description": "Part du processeur du serveur utilisée par Nginx. Jaune dès 50 %, rouge dès 80 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * sum(rate(namedprocess_namegroup_cpu_seconds_total{groupname=\"nginx\"}[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Nginx : mémoire",
+      "description": "Mémoire vive utilisée par tous les processus de Nginx.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 14
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_memory_bytes{groupname=\"nginx\", memtype=\"resident\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Processeur par composant (% du serveur)",
+      "description": "Les 8 programmes qui utilisent le plus le processeur, au cours du temps.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "percent",
+          "min": 0,
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "topk(8, 100 * sum by (groupname) (rate(namedprocess_namegroup_cpu_seconds_total[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total))))",
+          "legendFormat": "{{groupname}}",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Mémoire par composant",
+      "description": "Les 8 programmes qui utilisent le plus de mémoire vive, au cours du temps.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "topk(8, sum by (groupname) (namedprocess_namegroup_memory_bytes{memtype=\"resident\"}))",
+          "legendFormat": "{{groupname}}",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "table",
+      "title": "Tous les composants : processeur, mémoire et nombre de processus",
+      "description": "Chaque programme du serveur avec sa consommation actuelle.",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Processeur (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mémoire"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Processus"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * sum by (groupname) (rate(namedprocess_namegroup_cpu_seconds_total[5m])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "sum by (groupname) (namedprocess_namegroup_memory_bytes{memtype=\"resident\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": "prometheus-2",
+          "expr": "sum by (groupname) (namedprocess_namegroup_num_procs)",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "groupname": "Composant",
+              "Value #A": "Processeur (%)",
+              "Value #B": "Mémoire",
+              "Value #C": "Processus"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Processeur (%)",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 23,
+      "type": "row",
+      "title": "Workers Odoo (configuration actuelle : 31 workers HTTP)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "panels": []
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Processus Odoo",
+      "description": "Tous les processus Odoo : le principal, les 31 workers HTTP, les workers des tâches planifiées et le processus temps réel.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 37
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_num_procs{groupname=\"odoo\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Workers ayant servi (5 min)",
+      "description": "Nombre de workers différents qui ont traité au moins une requête ces 5 dernières minutes. Proche de 31 = les workers sont presque tous sollicités.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 37
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "count(sum by (pid) (count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | regexp `^\\S+ \\S+ (?P<pid>[0-9]+) ` | __error__=\"\" [5m])))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "Processus Odoo en calcul",
+      "description": "Processus Odoo qui utilisent le processeur à cet instant (ceux qui attendent la base ne sont pas comptés).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 37
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_states{groupname=\"odoo\", state=\"Running\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": "stat",
+      "title": "Mémoire moyenne par processus",
+      "description": "Mémoire vive moyenne d'un processus Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 37
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_memory_bytes{groupname=\"odoo\", memtype=\"resident\"}) / sum(namedprocess_namegroup_num_procs{groupname=\"odoo\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 28,
+      "type": "stat",
+      "title": "Odoo démarré depuis",
+      "description": "Temps écoulé depuis le dernier démarrage du service Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 37
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "s",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "time() - min(namedprocess_namegroup_oldest_start_time_seconds{groupname=\"odoo\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 29,
+      "type": "stat",
+      "title": "Connexions à la base ouvertes",
+      "description": "Connexions ouvertes sur la base Odoo en ce moment (chaque worker garde ses propres connexions).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 37
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"Connexions\"\nFROM pg_stat_activity\nWHERE datname = current_database() AND backend_type = 'client backend'"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 30,
+      "type": "stat",
+      "title": "Workers relancés (période)",
+      "description": "Nouveaux workers démarrés sur la période. Odoo en relance après chaque arrêt ou recyclage.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 41
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `(?i)odoo\\.service\\.server: .*alive` [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Arrêtés : délai dépassé",
+      "description": "Workers arrêtés parce qu'une requête a dépassé le temps maximum (limit_time_real). Rouge dès 1.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 41
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `(?i)odoo\\.service\\.server: .*timeout after` [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Arrêtés : limite mémoire",
+      "description": "Workers recyclés parce qu'ils ont dépassé la mémoire autorisée (limit_memory_soft). Jaune dès 1.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 41
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `(?i)odoo\\.service\\.server: .*memory limit` [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "Arrêtés : limite processeur",
+      "description": "Workers arrêtés parce qu'une requête a utilisé trop de temps processeur (limit_time_cpu). Jaune dès 1.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 41
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `(?i)odoo\\.service\\.server: .*CPU time limit` [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 34,
+      "type": "stat",
+      "title": "Recyclés : max de requêtes",
+      "description": "Recyclage normal d'un worker après un nombre fixe de requêtes (limit_request).",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 41
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(count_over_time({job=\"odoo\"} |~ `(?i)odoo\\.service\\.server: .*max request` [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 35,
+      "type": "stat",
+      "title": "Fichiers ouverts (pire processus)",
+      "description": "Part de la limite de fichiers ouverts atteinte par le processus Odoo le plus chargé. Jaune dès 70 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 41
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * max(namedprocess_namegroup_worst_fd_ratio{groupname=\"odoo\"})",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 36,
+      "type": "timeseries",
+      "title": "Processus Odoo : total et en calcul",
+      "description": "Nombre de processus Odoo au cours du temps, et combien utilisent le processeur.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 45
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "En calcul"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_num_procs{groupname=\"odoo\"})",
+          "legendFormat": "Total",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "sum(namedprocess_namegroup_states{groupname=\"odoo\", state=\"Running\"})",
+          "legendFormat": "En calcul",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "type": "timeseries",
+      "title": "Workers ayant servi des requêtes, par minute",
+      "description": "Nombre de workers différents qui ont traité des requêtes chaque minute. S'il touche souvent 31, Odoo manque de workers aux heures de pointe.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 45
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Workers sollicités"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "count(sum by (pid) (count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | regexp `^\\S+ \\S+ (?P<pid>[0-9]+) ` | __error__=\"\" [1m])))",
+          "legendFormat": "Workers sollicités"
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "type": "table",
+      "title": "Requêtes par worker (période)",
+      "description": "Répartition des requêtes entre les workers, avec leur temps de réponse moyen.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 53
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requêtes"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temps moyen (s)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum by (pid) (count_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | regexp `^\\S+ \\S+ (?P<pid>[0-9]+) ` | __error__=\"\" [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        },
+        {
+          "refId": "B",
+          "datasource": "loki",
+          "expr": "avg_over_time({job=\"odoo\"} |~ `HTTP/1\\.[01]\" [0-9]{3} - ` | regexp `\"[A-Z]+ (?P<section>/[^/ ?\"]*(?:/[^/ ?\"]*)?)[^\"]*\" [0-9]{3} - (?P<sql_count>[0-9]+) (?P<sql_time>[0-9.]+) (?P<total_time>[0-9.]+)$` | __error__=\"\" | regexp `^\\S+ \\S+ (?P<pid>[0-9]+) ` | __error__=\"\" | unwrap total_time [$__range]) by (pid)",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "pid": "Worker (PID)",
+              "Value #A": "Requêtes",
+              "Value #B": "Temps moyen (s)"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Requêtes",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 39,
+      "type": "logs",
+      "title": "Événements des workers (démarrages, arrêts, limites)",
+      "description": "Messages du gestionnaire de workers Odoo, le plus récent en haut.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 53
+      },
+      "datasource": "loki",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "{job=\"odoo\"} |~ `odoo\\.service\\.server`",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 40,
+      "type": "row",
+      "title": "Processeur et mémoire au cours du temps",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 61
+      },
+      "panels": []
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Processeur par usage (%)",
+      "description": "Applications = Odoo, PostgreSQL… ; Système = noyau ; Attente du disque = le processeur attend le disque.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "percent",
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Applications"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "system"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Système"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "iowait"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Attente du disque"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * avg by (mode) (rate(node_cpu_seconds_total{mode=~\"user|system|iowait\"}[5m]))",
+          "legendFormat": "{{mode}}",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Mémoire utilisée et totale",
+      "description": "Mémoire vive utilisée par rapport à la mémoire installée.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Utilisée"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Totale"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+          "legendFormat": "Utilisée",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "node_memory_MemTotal_bytes",
+          "legendFormat": "Totale",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "type": "timeseries",
+      "title": "Charge du processeur",
+      "description": "Tâches en attente du processeur. Tant que les courbes restent sous « Nombre de cœurs », tout va bien.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre de cœurs"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "node_load1",
+          "legendFormat": "1 min",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "node_load5",
+          "legendFormat": "5 min",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "C",
+          "datasource": "prometheus-2",
+          "expr": "node_load15",
+          "legendFormat": "15 min",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "D",
+          "datasource": "prometheus-2",
+          "expr": "count(count by (cpu) (node_cpu_seconds_total))",
+          "legendFormat": "Nombre de cœurs",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 44,
+      "type": "timeseries",
+      "title": "Mémoire d'échange utilisée (%)",
+      "description": "Part du swap utilisée au cours du temps.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 70
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "percent",
+          "min": 0,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "100 * (1 - node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)",
+          "legendFormat": "Swap",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 45,
+      "type": "row",
+      "title": "Disque et réseau",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 78
+      },
+      "panels": []
+    },
+    {
+      "id": 46,
+      "type": "table",
+      "title": "Espace utilisé par partition",
+      "description": "Espace utilisé sur chaque partition.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 79
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "max by (mountpoint) (100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|devtmpfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|devtmpfs\"}))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "mountpoint": "Partition",
+              "Value": "Utilisé (%)",
+              "Value #A": "Utilisé (%)"
+            }
+          }
+        }
+      ],
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Utilisé (%)",
+            "desc": true
+          }
+        ],
+        "showHeader": true
+      }
+    },
+    {
+      "id": 47,
+      "type": "timeseries",
+      "title": "Lectures et écritures disque",
+      "description": "Volume lu et écrit sur les disques, par seconde.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 79
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "Bps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(rate(node_disk_read_bytes_total[5m]))",
+          "legendFormat": "Lecture",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "sum(rate(node_disk_written_bytes_total[5m]))",
+          "legendFormat": "Écriture",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "type": "timeseries",
+      "title": "Trafic réseau",
+      "description": "Données reçues et envoyées par le serveur, par seconde.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 79
+      },
+      "datasource": "prometheus-2",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "Bps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "prometheus-2",
+          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|docker.*|veth.*|br-.*\"}[5m]))",
+          "legendFormat": "Reçu",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": "prometheus-2",
+          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|docker.*|veth.*|br-.*\"}[5m]))",
+          "legendFormat": "Envoyé",
+          "instant": false,
+          "range": true
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "type": "row",
+      "title": "Base de données : espace et mémoire",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 87
+      },
+      "panels": []
+    },
+    {
+      "id": 50,
+      "type": "stat",
+      "title": "Taille de la base",
+      "description": "Espace disque occupé par la base Odoo.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 88
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT pg_database_size(current_database()) AS \"Taille\""
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 51,
+      "type": "stat",
+      "title": "Connexions utilisées",
+      "description": "Part des connexions possibles déjà ouvertes, maintenant. Jaune dès 70 %, rouge dès 90 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 88
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) / current_setting('max_connections')::int, 1) AS \"Connexions utilisées\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend'"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 52,
+      "type": "stat",
+      "title": "Lectures servies par le cache",
+      "description": "Part des lectures servies depuis la mémoire plutôt que le disque. Vert au-dessus de 99 %.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 88
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * blks_hit / NULLIF(blks_hit + blks_read, 0), 2) AS \"Cache\"\nFROM pg_stat_database\nWHERE datname = current_database()"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 53,
+      "type": "stat",
+      "title": "Fichiers temporaires écrits",
+      "description": "Données écrites sur disque faute de mémoire pour trier ou regrouper, depuis le démarrage de PostgreSQL.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 88
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT temp_bytes AS \"Fichiers temporaires\"\nFROM pg_stat_database\nWHERE datname = current_database()"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 54,
+      "type": "table",
+      "title": "Plus grosses tables",
+      "description": "Les 10 tables qui occupent le plus de place.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 92
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taille"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT relname AS \"Table\", pg_total_relation_size(relid) AS \"Taille\"\nFROM pg_stat_user_tables\nORDER BY 2 DESC\nLIMIT 10"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 55,
+      "type": "table",
+      "title": "Connexions par état",
+      "description": "Connexions ouvertes, par état (active = en train de travailler, idle = en attente).",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 92
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(state, 'inconnu') AS \"État\", COUNT(*) AS \"Connexions\"\nFROM pg_stat_activity\nWHERE backend_type = 'client backend'\nGROUP BY 1\nORDER BY 2 DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 56,
+      "type": "row",
+      "title": "Serveur web : volume envoyé",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "panels": []
+    },
+    {
+      "id": 57,
+      "type": "stat",
+      "title": "Données envoyées (période)",
+      "description": "Volume de données envoyé par le serveur web sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 101
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 1,
+          "unit": "decbytes",
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(sum_over_time({job=\"nginx\", stream=\"access\"} | regexp `^(?P<ip>[^ ]+) [^ ]+ [^ ]+ \\[[^\\]]+\\] \"(?P<method>[A-Z]+) (?P<path>[^ ?\"]*)[^\"]*\" (?P<code>[0-9]{3}) (?P<bytes>[0-9]+)` | __error__=\"\" | unwrap bytes [$__range]))",
+          "legendFormat": "",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 58,
+      "type": "timeseries",
+      "title": "Données envoyées par minute",
+      "description": "Volume envoyé par le serveur web, minute par minute.",
+      "gridPos": {
+        "h": 8,
+        "w": 18,
+        "x": 6,
+        "y": 101
+      },
+      "datasource": "loki",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          },
+          "unit": "decbytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "loki",
+          "expr": "sum(sum_over_time({job=\"nginx\", stream=\"access\"} | regexp `^(?P<ip>[^ ]+) [^ ]+ [^ ]+ \\[[^\\]]+\\] \"(?P<method>[A-Z]+) (?P<path>[^ ?\"]*)[^\"]*\" (?P<code>[0-9]{3}) (?P<bytes>[0-9]+)` | __error__=\"\" | unwrap bytes [1m]))",
+          "legendFormat": "envoyé"
+        }
+      ]
+    }
+  ]
+}

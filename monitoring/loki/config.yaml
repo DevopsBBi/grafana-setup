@@ -1,0 +1,3 @@
+# @@NOT-IMPORTED@@
+# Replaced by the live Loki configuration when you run scripts/collect-monitoring.sh on n8nserver
+# and scripts/import.py on your Mac. monitoring/install.sh refuses to run while this marker is present.

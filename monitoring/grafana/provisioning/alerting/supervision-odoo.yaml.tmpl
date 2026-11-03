@@ -1,0 +1,383 @@
+{
+  "apiVersion": 1,
+  "contactPoints": [
+    {
+      "orgId": 1,
+      "name": "Équipe supervision",
+      "receivers": [
+        {
+          "uid": "email-supervision",
+          "type": "email",
+          "disableResolveMessage": false,
+          "settings": {
+            "addresses": "@@ALERT_EMAILS@@",
+            "singleEmail": true
+          }
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "orgId": 1,
+      "receiver": "Équipe supervision",
+      "group_by": [
+        "grafana_folder",
+        "alertname"
+      ],
+      "group_wait": "30s",
+      "group_interval": "5m",
+      "repeat_interval": "4h"
+    }
+  ],
+  "groups": [
+    {
+      "orgId": 1,
+      "name": "Erreurs et disponibilité",
+      "folder": "Supervision Odoo",
+      "interval": "1m",
+      "rules": [
+        {
+          "uid": "odoo-erreurs",
+          "title": "Erreurs Odoo",
+          "condition": "C",
+          "for": "0s",
+          "noDataState": "OK",
+          "execErrState": "OK",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "equipe": "supervision"
+          },
+          "annotations": {
+            "summary": "Erreurs dans Odoo",
+            "description": "{{ printf \"%.0f\" $values.B.Value }} erreur(s) ERROR ou CRITICAL dans le journal Odoo au cours de la dernière heure. Détail : tableau « Journaux et erreurs ».",
+            "__dashboardUid__": "supervision-odoo-journaux",
+            "__panelId__": "3"
+          },
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 3600,
+                "to": 0
+              },
+              "datasourceUid": "@@DS_LOKI_UID@@",
+              "model": {
+                "refId": "A",
+                "expr": "sum(count_over_time({job=\"odoo\", level=~\"ERROR|CRITICAL\"} [1h]))",
+                "queryType": "instant",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "type": "reduce",
+                "expression": "A",
+                "reducer": "last",
+                "settings": {
+                  "mode": "dropNN"
+                }
+              }
+            },
+            {
+              "refId": "C",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "C",
+                "type": "threshold",
+                "expression": "B",
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "uid": "postgresql-erreurs",
+          "title": "Erreurs PostgreSQL",
+          "condition": "C",
+          "for": "0s",
+          "noDataState": "OK",
+          "execErrState": "OK",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "equipe": "supervision"
+          },
+          "annotations": {
+            "summary": "Erreurs dans la base PostgreSQL",
+            "description": "{{ printf \"%.0f\" $values.B.Value }} erreur(s) ERROR, FATAL ou PANIC dans le journal PostgreSQL au cours de la dernière heure.",
+            "__dashboardUid__": "supervision-odoo-journaux",
+            "__panelId__": "4"
+          },
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 3600,
+                "to": 0
+              },
+              "datasourceUid": "@@DS_LOKI_UID@@",
+              "model": {
+                "refId": "A",
+                "expr": "sum(count_over_time({job=\"postgresql\"} |~ \" (ERROR|FATAL|PANIC):\" [1h]))",
+                "queryType": "instant",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "type": "reduce",
+                "expression": "A",
+                "reducer": "last",
+                "settings": {
+                  "mode": "dropNN"
+                }
+              }
+            },
+            {
+              "refId": "C",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "C",
+                "type": "threshold",
+                "expression": "B",
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "uid": "web-5xx",
+          "title": "Erreurs du site web (5xx)",
+          "condition": "C",
+          "for": "0s",
+          "noDataState": "OK",
+          "execErrState": "OK",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "equipe": "supervision"
+          },
+          "annotations": {
+            "summary": "Le site renvoie des erreurs serveur",
+            "description": "{{ printf \"%.0f\" $values.B.Value }} réponse(s) 5xx (500, 502, 503…) envoyées aux visiteurs par Nginx au cours de la dernière heure.",
+            "__dashboardUid__": "supervision-odoo-journaux",
+            "__panelId__": "5"
+          },
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 3600,
+                "to": 0
+              },
+              "datasourceUid": "@@DS_LOKI_UID@@",
+              "model": {
+                "refId": "A",
+                "expr": "sum(count_over_time({job=\"nginx\", status=~\"5..\"} [1h]))",
+                "queryType": "instant",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "type": "reduce",
+                "expression": "A",
+                "reducer": "last",
+                "settings": {
+                  "mode": "dropNN"
+                }
+              }
+            },
+            {
+              "refId": "C",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "C",
+                "type": "threshold",
+                "expression": "B",
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "uid": "odoo-silencieux",
+          "title": "Odoo silencieux ou collecte coupée",
+          "condition": "C",
+          "for": "0s",
+          "noDataState": "Alerting",
+          "execErrState": "Alerting",
+          "isPaused": false,
+          "labels": {
+            "severity": "critical",
+            "equipe": "supervision"
+          },
+          "annotations": {
+            "summary": "Plus aucune ligne de journal Odoo",
+            "description": "Aucune ligne de journal Odoo reçue depuis 30 minutes : Odoo est peut-être arrêté, ou la collecte (Alloy, Tailscale, Loki) est coupée.",
+            "__dashboardUid__": "supervision-odoo-journaux",
+            "__panelId__": "10"
+          },
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 1800,
+                "to": 0
+              },
+              "datasourceUid": "@@DS_LOKI_UID@@",
+              "model": {
+                "refId": "A",
+                "expr": "sum(count_over_time({job=\"odoo\"} [30m]))",
+                "queryType": "instant",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "type": "reduce",
+                "expression": "A",
+                "reducer": "last",
+                "settings": {
+                  "mode": "dropNN"
+                }
+              }
+            },
+            {
+              "refId": "C",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "C",
+                "type": "threshold",
+                "expression": "B",
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "type": "lt",
+                      "params": [
+                        1
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "uid": "systeme-erreurs",
+          "title": "Erreurs des services système",
+          "condition": "C",
+          "for": "0s",
+          "noDataState": "OK",
+          "execErrState": "OK",
+          "isPaused": false,
+          "labels": {
+            "severity": "warning",
+            "equipe": "supervision"
+          },
+          "annotations": {
+            "summary": "Erreurs d'un service système",
+            "description": "Le service {{ $labels.unit }} a écrit {{ printf \"%.0f\" $values.B.Value }} erreur(s) dans le journal système au cours de la dernière heure.",
+            "__dashboardUid__": "supervision-odoo-journaux",
+            "__panelId__": "7"
+          },
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 3600,
+                "to": 0
+              },
+              "datasourceUid": "@@DS_LOKI_UID@@",
+              "model": {
+                "refId": "A",
+                "expr": "sum by (unit) (count_over_time({job=\"systemd-journal\", level=~\"err|crit|alert|emerg\"} !~ \"kex_exchange_identification|banner exchange|Connection (closed|reset) by\" [1h]))",
+                "queryType": "instant",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200
+              }
+            },
+            {
+              "refId": "B",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "B",
+                "type": "reduce",
+                "expression": "A",
+                "reducer": "last",
+                "settings": {
+                  "mode": "dropNN"
+                }
+              }
+            },
+            {
+              "refId": "C",
+              "datasourceUid": "__expr__",
+              "model": {
+                "refId": "C",
+                "type": "threshold",
+                "expression": "B",
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "type": "gt",
+                      "params": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

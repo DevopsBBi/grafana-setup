@@ -1,0 +1,13 @@
+# Dashboards loaded from files (copied by monitoring/install.sh from monitoring/grafana/dashboards).
+# allowUiUpdates lets you edit them in Grafana; save your changes back to git with scripts/collect-monitoring.sh + scripts/import.py.
+apiVersion: 1
+providers:
+  - name: supervision
+    orgId: 1
+    folder: "@@GRAFANA_FOLDER@@"
+    type: file
+    disableDeletion: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 60
+    options:
+      path: /var/lib/grafana/dashboards/supervision

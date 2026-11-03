@@ -1,0 +1,5 @@
+// @@NOT-IMPORTED@@
+// This file is replaced by the live /etc/alloy/config.alloy when you run:
+//   1. on the VPS:   sudo bash scripts/collect-vps.sh
+//   2. on your Mac:  python3 scripts/import.py _import/collect-vps-*.tgz
+// vps/install.sh refuses to run while this marker is present.

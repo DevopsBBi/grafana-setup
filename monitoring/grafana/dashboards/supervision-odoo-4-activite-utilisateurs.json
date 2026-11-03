@@ -1,0 +1,406 @@
+{
+  "title": "Activité des utilisateurs Odoo",
+  "uid": "odoo-users-activity",
+  "description": "Qui se connecte, qui écrit dans les fiches, et quelles valeurs changent. Source : base Odoo (BBi).",
+  "tags": [
+    "odoo",
+    "utilisateurs",
+    "activite"
+  ],
+  "links": [],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 27,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "description": "",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**Activité des utilisateurs Odoo.** Qui s'est connecté, qui a écrit dans les fiches (messages et notes), et quelles valeurs ont été modifiées. Choisissez une période de 24 h ou de 7 jours en haut à droite. **Limite :** les messages affichés à l'écran (erreurs, refus d'accès) ne sont pas enregistrés dans la base : cette page ne peut pas les montrer."
+      }
+    },
+    {
+      "id": 2,
+      "type": "row",
+      "title": "En un coup d'œil",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "panels": []
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Utilisateurs connectés (période)",
+      "description": "Utilisateurs dont la dernière connexion est dans la période affichée.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM res_users u\nWHERE u.active AND $__timeFilter(u.login_date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Personnes ayant agi (période)",
+      "description": "Nombre de personnes différentes qui ont écrit dans une fiche sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT m.author_id) FROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Messages et notes (période)",
+      "description": "Messages et notes écrits par les utilisateurs sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Valeurs modifiées (période)",
+      "description": "Modifications de champs suivis (statut, montant, étape…) sur la période.",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) FROM mail_tracking_value tv\nJOIN mail_message m ON m.id = tv.mail_message_id\nWHERE $__timeFilter(m.date)"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Qui fait quoi",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "panels": []
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Activité par heure",
+      "description": "Nombre de messages et de notes écrits par les utilisateurs, heure par heure.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(m.date, '1h') AS time, COUNT(*) AS \"Actions\"\nFROM mail_message m\nWHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)\nGROUP BY 1\nORDER BY 1"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Par utilisateur : dernière connexion et activité",
+      "description": "Une ligne par utilisateur actif : dernière connexion, nombre d'actions et dernière action sur la période.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT p.name AS \"Utilisateur\",\n       u.login_date AS \"Dernière connexion\",\n       COALESCE(s.nb, 0) AS \"Actions (période)\",\n       s.last_at AS \"Dernière action\"\nFROM res_users u\nJOIN res_partner p ON p.id = u.partner_id\nLEFT JOIN (\n    SELECT m.author_id, COUNT(*) AS nb, MAX(m.date) AS last_at\n    FROM mail_message m\n    WHERE m.author_id IS NOT NULL AND $__timeFilter(m.date)\n    GROUP BY m.author_id\n) s ON s.author_id = p.id\nWHERE u.active\nORDER BY \"Dernière connexion\" DESC NULLS LAST\nLIMIT 100"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 10,
+      "type": "row",
+      "title": "Dernières actions",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "panels": []
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Derniers messages et notes",
+      "description": "Qui a écrit quoi, sur quelle fiche, et le début du message (200 dernières lignes de la période).",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT m.date AS \"Date\",\n       p.name AS \"Utilisateur\",\n       m.model AS \"Type de fiche\",\n       m.res_id AS \"N° fiche\",\n       LEFT(regexp_replace(COALESCE(m.body, ''), '<[^>]+>', ' ', 'g'), 150) AS \"Message\"\nFROM mail_message m\nJOIN res_partner p ON p.id = m.author_id\nWHERE $__timeFilter(m.date)\nORDER BY m.date DESC\nLIMIT 200"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Modifications de champs suivis",
+      "description": "Qui a changé quelle valeur, de quoi à quoi, sur quelle fiche (200 dernières lignes de la période).",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": "BBi",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": "BBi",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT m.date AS \"Date\",\n       p.name AS \"Utilisateur\",\n       m.model AS \"Type de fiche\",\n       m.res_id AS \"N° fiche\",\n       f.name AS \"Champ\",\n       tv.old_value_char AS \"Avant\",\n       tv.new_value_char AS \"Après\"\nFROM mail_tracking_value tv\nJOIN mail_message m ON m.id = tv.mail_message_id\nLEFT JOIN res_partner p ON p.id = m.author_id\nLEFT JOIN ir_model_fields f ON f.id = tv.field_id\nWHERE $__timeFilter(m.date)\nORDER BY m.date DESC\nLIMIT 200"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

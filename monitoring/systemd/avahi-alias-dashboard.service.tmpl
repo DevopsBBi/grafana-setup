@@ -1,0 +1,13 @@
+# Publishes @@DASHBOARD_NAME@@ -> @@MON_LAN_IP@@ on the office network (mDNS), so any computer or phone can open http://@@DASHBOARD_NAME@@
+[Unit]
+Description=Publish @@DASHBOARD_NAME@@ on the local network (mDNS)
+After=avahi-daemon.service network-online.target
+Requires=avahi-daemon.service
+
+[Service]
+ExecStart=/usr/bin/avahi-publish -a -R @@DASHBOARD_NAME@@ @@MON_LAN_IP@@
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

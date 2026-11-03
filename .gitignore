@@ -1,0 +1,11 @@
+# Secrets: never commit them (copy secrets.env.example to secrets.env on the server)
+secrets.env
+*.secret
+# Raw exports from the servers (scripts/collect-*.sh) before import
+_import/
+*.tgz
+# Backups and local files
+*.bak
+*.bak-*
+__pycache__/
+.DS_Store
