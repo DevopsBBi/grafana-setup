@@ -1,0 +1,131 @@
+// Example Grafana Alloy configuration for the application server, structured as:
+//   EXITS (where data goes) -> LOGS (read -> transform -> send) -> METRICS (measure -> collect -> send)
+// Reference only: the live file goes to vps/alloy/config.alloy (scripts/collect-vps.sh + scripts/import.py).
+// Check the log paths on the server before using it, then: sudo alloy fmt <file> >/dev/null && echo syntax-ok
+
+// ===== EXITS =====
+loki.write "central" {
+  endpoint { url = "http://100.118.61.101:3100/loki/api/v1/push" }
+}
+
+prometheus.remote_write "central" {
+  endpoint { url = "http://100.118.61.101:9091/api/v1/write" }
+  external_labels = { host = "vps-web" }
+}
+
+// ===== LOGS =====
+
+// Application
+loki.source.file "odoo" {
+  targets    = [{__path__ = "/var/log/odoo/odoo-server.log", job = "odoo", host = "vps-web"}]
+  forward_to = [loki.process.odoo.receiver]
+}
+
+loki.process "odoo" {
+  stage.multiline {
+    firstline = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3} "
+  }
+  stage.regex {
+    expression = "^\\S+ \\S+ \\d+ (?P<level>\\S+) (?P<database>\\S+) (?P<logger>[^:]+):"
+  }
+  stage.labels {
+    values = { level = "" }
+  }
+  forward_to = [loki.write.central.receiver]
+}
+
+// Database
+loki.source.file "postgresql" {
+  targets    = [{__path__ = "/var/log/postgresql/postgresql-14-main.log", job = "postgresql", host = "vps-web"}]
+  forward_to = [loki.write.central.receiver]
+}
+
+// Website
+loki.source.file "nginx" {
+  targets = [
+    {__path__ = "/var/log/nginx/access.log", job = "nginx", host = "vps-web", stream = "access"},
+    {__path__ = "/var/log/nginx/error.log",  job = "nginx", host = "vps-web", stream = "error"},
+  ]
+  forward_to = [loki.process.nginx.receiver]
+}
+
+loki.process "nginx" {
+  stage.regex {
+    expression = "^\\S+ \\S+ \\S+ \\[[^\\]]+\\] \"\\S+ \\S+[^\"]*\" (?P<status>\\d{3}) "
+  }
+  stage.labels {
+    values = { status = "" }
+  }
+  forward_to = [loki.write.central.receiver]
+}
+
+// System journal
+discovery.relabel "journal" {
+  targets = []
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+}
+
+loki.source.journal "system" {
+  relabel_rules = discovery.relabel.journal.rules
+  labels        = { job = "systemd-journal", host = "vps-web" }
+  forward_to    = [loki.write.central.receiver]
+}
+
+// ===== METRICS =====
+
+// Server
+prometheus.exporter.unix "host" {
+  enable_collectors = ["systemd", "processes"]
+}
+
+prometheus.scrape "host" {
+  targets         = prometheus.exporter.unix.host.targets
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.central.receiver]
+}
+
+// Programs
+prometheus.exporter.process "services" {
+  matcher {
+    name = "postgresql"
+    comm = ["postgres"]
+  }
+  matcher {
+    name    = "odoo"
+    cmdline = ["odoo"]
+  }
+  matcher {
+    name = "nginx"
+    comm = ["nginx"]
+  }
+}
+
+prometheus.scrape "services" {
+  targets    = prometheus.exporter.process.services.targets
+  forward_to = [prometheus.remote_write.central.receiver]
+}
+
+// Database
+prometheus.exporter.postgres "postgresql" {
+  data_source_names = [sys.env("ALLOY_PG_DSN")]
+}
+
+prometheus.scrape "postgresql" {
+  targets    = prometheus.exporter.postgres.postgresql.targets
+  forward_to = [prometheus.remote_write.central.receiver]
+}
+
+// Alloy itself
+prometheus.exporter.self "alloy" { }
+
+prometheus.scrape "alloy" {
+  targets    = prometheus.exporter.self.alloy.targets
+  forward_to = [prometheus.remote_write.central.receiver]
+}

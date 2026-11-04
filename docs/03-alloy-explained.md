@@ -1,6 +1,7 @@
 # The Alloy configuration, block by block
 
 File: `vps/alloy/config.alloy` (deployed to `/etc/alloy/config.alloy` on the VPS). If this page and the file ever disagree, the file is right: update this page.
+A short, structured example of the whole file is in `vps/alloy/config.example.alloy`.
 Alloy works like a pipeline: **sources** read data, **processors** transform it, **writers** send it.
 Each block is `<component> "<name>" { ... }`, and blocks are wired together with `forward_to` / `targets`.
 
